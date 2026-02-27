@@ -1,49 +1,57 @@
 import os
 import sys
+import shutil
 import subprocess
 from pathlib import Path
 
-# =========================================
-# Cross-Platform Production-Ready Setup
-# AI Stock Trading / MLOps
-# =========================================
+OVERWRITE = True
 
-print("===== Starting ML Trading System Setup =====")
-
-# -------------------------
-# 1️⃣ Create project directories
-# -------------------------
-folders = [
-    "data",
-    "logs",
-    "models",
-    "training_pipeline",
+FOLDERS = [
+    "config",
+    "data/raw",
+    "data/processed",
+    "src/data",
+    "src/features",
+    "src/models",
+    "src/evaluation",
+    "src/utils",
+    "src/pipeline",
+    "pipelines",
     "dashboard",
-    "evaluation",
-    "scripts"
+    "models",
+    "logs",
+    "scripts",
+    "tests"
 ]
 
-for folder in folders:
-    Path(folder).mkdir(parents=True, exist_ok=True)
-print("[✓] Project directories created.")
+FILES = {
+    "pipelines/train.py": "",
+    "pipelines/backtest.py": "",
+    "pipelines/realtime.py": "",
+    "dashboard/app.py": "",
+    "src/data/fetcher.py": "",
+    "src/data/preprocess.py": "",
+    "src/features/engineer.py": "",
+    "src/models/trainer.py": "",
+    "src/models/predictor.py": "",
+    "src/models/registry.py": "",
+    "src/evaluation/metrics.py": "",
+    "src/utils/logger.py": "",
+    "src/utils/paths.py": "",
+    "src/utils/config_loader.py": "",
+    "src/pipeline/train_pipeline.py": "",
+    "src/pipeline/backtest_pipeline.py": "",
+    "src/pipeline/realtime_pipeline.py": "",
+    "config/data.yaml": "source: yfinance",
+    "config/model.yaml": "model: RandomForest",
+    "config/training.yaml": "epochs: 10",
+    "scripts/setup.py": "",
+    "README.md": "",
+    ".gitignore": "",
+    "requirements.txt": ""
+}
 
-# -------------------------
-# 2️⃣ Create virtual environment
-# -------------------------
-venv_path = Path("venv")
-if not venv_path.exists():
-    print("[*] Creating virtual environment...")
-    subprocess.run([sys.executable, "-m", "venv", "venv"])
-
-# Activate message
-activate_msg = "source venv/bin/activate" if os.name != "nt" else r"venv\Scripts\activate.bat"
-print(f"[✓] Virtual environment created. Activate with:\n    {activate_msg}")
-
-# -------------------------
-# 3️⃣ Install Python dependencies
-# -------------------------
-print("[*] Installing Python packages...")
-packages = [
+PACKAGES = [
     "yfinance",
     "pandas",
     "numpy",
@@ -52,126 +60,43 @@ packages = [
     "streamlit",
     "plotly",
     "matplotlib",
-    "seaborn"
-]
-subprocess.run([sys.executable, "-m", "pip", "install", "--upgrade", "pip"])
-subprocess.run([sys.executable, "-m", "pip", "install"] + packages)
-print("[✓] Python dependencies installed.")
-
-# -------------------------
-# 4️⃣ Create placeholder files
-# -------------------------
-placeholders = [
-    "training_pipeline/train.py",
-    "evaluation/evaluate.py",
-    "dashboard/app.py",
-    "scripts/setup.py",
-    "portfolio.csv",
-    "logs/system.log"
+    "seaborn",
+    "pyyaml"
 ]
 
-for file in placeholders:
-    Path(file).touch(exist_ok=True)
+def recreate_folders():
+    for folder in FOLDERS:
+        path = Path(folder)
+        if path.exists() and OVERWRITE:
+            shutil.rmtree(path)
+        path.mkdir(parents=True, exist_ok=True)
 
-# Set log file permissions (Windows/Linux compatible)
-log_path = Path("logs/system.log")
-log_path.chmod(0o664)
+def recreate_files():
+    for file, content in FILES.items():
+        path = Path(file)
+        if path.exists() and OVERWRITE:
+            path.unlink()
+        path.write_text(content)
 
-print("[✓] Placeholder files created.")
+def create_venv():
+    venv_path = Path("venv")
+    if venv_path.exists() and OVERWRITE:
+        shutil.rmtree(venv_path)
+    subprocess.run([sys.executable, "-m", "venv", "venv"], check=True)
+    return "source venv/bin/activate" if os.name != "nt" else r"venv\Scripts\activate.bat"
 
-# -------------------------
-# 5️⃣ .gitignore
-# -------------------------
-gitignore_content = """
-# Virtual environment
-venv/
+def install_dependencies():
+    subprocess.run([sys.executable, "-m", "pip", "install", "--upgrade", "pip"], check=True)
+    subprocess.run([sys.executable, "-m", "pip", "install"] + PACKAGES, check=True)
 
-# Python cache
-__pycache__/
-*.pyc
+def main():
+    print("===== Setting Up Project =====")
+    recreate_folders()
+    recreate_files()
+    activate_cmd = create_venv()
+    install_dependencies()
+    print("===== Setup Complete =====")
+    print(f"Activate environment:\n  {activate_cmd}")
 
-# Logs
-logs/
-
-# Data
-data/
-
-# Models
-models/
-
-# Jupyter
-.ipynb_checkpoints/
-
-# OS files
-.DS_Store
-"""
-Path(".gitignore").write_text(gitignore_content)
-print("[✓] .gitignore created.")
-
-# -------------------------
-# 6️⃣ README.md
-# -------------------------
-readme_content = """
-# AI Stock Trading System (MLOps / Production Ready)
-
-## Project Overview
-This is a production-ready, automated AI stock trading system built for learning and MLOps experience.
-It includes:
-
-- Walk-forward ML training
-- Forward-testing/backtesting
-- Real-time stock data ingestion (yfinance)
-- Dashboard visualization (Streamlit + Plotly)
-- Model tracking & experiment management (MLflow)
-- Logging and reproducible environment (cross-platform)
-
-## Project Structure
-ml-trading-system/
-├── data/
-├── logs/
-├── models/
-├── training_pipeline/
-├── dashboard/
-├── evaluation/
-├── scripts/
-├── venv/
-├── portfolio.csv
-├── .gitignore
-├── README.md
-└── requirements.txt
-
-## Setup Instructions
-1. Run setup script:
-    python scripts/setup.py
-2. Activate environment:
-    Windows: venv\\Scripts\\activate.bat
-    Linux/macOS: source venv/bin/activate
-3. Run training:
-    python training_pipeline/train.py
-4. Run dashboard:
-    streamlit run dashboard/app.py
-
-## MLOps / Production Features
-- CI/CD ready (GitHub Actions)
-- Cloud deployable (AWS/GCP/Azure)
-- Logging & monitoring
-- MLflow experiment tracking
-- Cron/scheduler compatible
-"""
-Path("README.md").write_text(readme_content)
-print("[✓] README.md created.")
-
-# -------------------------
-# 7️⃣ requirements.txt
-# -------------------------
-requirements_content = "\n".join(packages)
-Path("requirements.txt").write_text(requirements_content)
-print("[✓] requirements.txt created.")
-
-# -------------------------
-# Done
-# -------------------------
-print("===== Setup Complete =====")
-print(f"Activate environment:\n  {activate_msg}")
-print("Run training: python training_pipeline/train.py")
-print("Run dashboard: streamlit run dashboard/app.py")
+if __name__ == "__main__":
+    main()
