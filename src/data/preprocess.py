@@ -1,0 +1,59 @@
+import pandas as pd
+from pathlib import Path
+import yaml
+
+class DataPreprocessor:
+    def __init__(self, config_path="config/data.yaml"):
+        with open(config_path, "r") as f:
+            self.config = yaml.safe_load(f)
+
+        self.raw_dir = Path("data/raw")
+        self.processed_dir = Path("data/processed")
+        self.processed_dir.mkdir(parents=True, exist_ok=True)
+
+    def clean(self, df: pd.DataFrame) -> pd.DataFrame:
+        rules = self.config.get("cleaning", {})
+
+        # Ensure datetime index
+        if not isinstance(df.index, pd.DatetimeIndex):
+            df.index = pd.to_datetime(df.index, errors="coerce")
+
+        # Sort by date
+        df = df.sort_index()
+
+        # Remove duplicates
+        if rules.get("remove_duplicates", True):
+            df = df[~df.index.duplicated(keep="first")]
+
+        # Drop NaN rows
+        if rules.get("dropna", False):
+            df = df.dropna()
+
+        # Forward-fill missing values
+        if rules.get("forward_fill", False):
+            df = df.ffill()
+
+        return df
+
+    def process_all(self):
+        csv_files = list(self.raw_dir.glob("*.csv"))
+
+        if not csv_files:
+            print("No raw data found in data/raw/.")
+            return
+
+        for file in csv_files:
+            try:
+                df = pd.read_csv(file, index_col=0, parse_dates=True)
+                if df.empty:
+                    print(f"Warning: {file.name} is empty. Skipping.")
+                    continue
+
+                df_clean = self.clean(df)
+                output_path = self.processed_dir / file.name
+                df_clean.to_csv(output_path)
+
+                print(f"Processed: {file.name} → {output_path}")
+
+            except Exception as e:
+                print(f"Error processing {file.name}: {e}")
