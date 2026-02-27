@@ -14,10 +14,7 @@ class DataPreprocessor:
     def clean(self, df: pd.DataFrame) -> pd.DataFrame:
         rules = self.config.get("cleaning", {})
 
-        # Ensure datetime index with explicit format
         df.index = pd.to_datetime(df.index, format="%Y-%m-%d", errors="coerce")
-
-        # Sort by date
         df = df.sort_index()
 
         if rules.get("remove_duplicates", True):
@@ -36,9 +33,11 @@ class DataPreprocessor:
             df = pd.read_csv(
                 file,
                 index_col=0,
-                parse_dates=[0]
+                parse_dates=[0],
+                date_format="%Y-%m-%d"
             )
 
             df_clean = self.clean(df)
-            df_clean.to_csv(self.processed_dir / file.name)
-            print(f"Processed: {file.name} → {self.processed_dir / file.name}")
+            output_path = self.processed_dir / file.name
+            df_clean.to_csv(output_path)
+            print(f"Processed: {file.name} → {output_path}")
