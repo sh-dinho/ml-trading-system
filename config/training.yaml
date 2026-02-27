@@ -1,1 +1,8 @@
-epochs: 10
+target:
+  type: future_return   # options: future_return, direction, multi_class
+  horizon: 5            # predict 5‑day ahead movement
+
+train:
+  test_size: 0.2
+  shuffle: true
+  scale_features: true
