@@ -1,8 +1,8 @@
 from src.data.fetcher import DataFetcher
 from src.data.preprocess import DataPreprocessor
 
-fetcher = DataFetcher()
-raw_data = fetcher.fetch()
+fetcher = DataFetcher("config/data.yaml")
+fetcher.fetch_data()
 
-pre = DataPreprocessor()
+pre = DataPreprocessor("config/data.yaml")
 pre.process_all()

@@ -11,3 +11,6 @@ def test_ingestion_pipeline():
     preprocessor.process_all()
 
     print("\n=== Test Complete ===")
+
+if __name__ == "__main__":
+    test_ingestion_pipeline()

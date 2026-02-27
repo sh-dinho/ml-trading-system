@@ -3,10 +3,12 @@ tickers:
   - MSFT
   - TSLA
 
-interval: "1d"
-period: "5y"
+start_date: "2020-01-01"
+end_date: "2024-01-01"
+
+output_dir: "data/raw"
 
 cleaning:
-  dropna: true
-  forward_fill: true
   remove_duplicates: true
+  dropna: false
+  forward_fill: true
