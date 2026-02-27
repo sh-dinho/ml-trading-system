@@ -1,1 +1,12 @@
-source: yfinance
+tickers:
+  - AAPL
+  - MSFT
+  - TSLA
+
+interval: "1d"
+period: "5y"
+
+cleaning:
+  dropna: true
+  forward_fill: true
+  remove_duplicates: true

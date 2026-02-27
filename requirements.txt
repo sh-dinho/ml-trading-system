@@ -1,0 +1,24 @@
+# Data ingestion
+yfinance
+pandas
+numpy
+
+# Feature engineering & indicators
+ta
+
+# Machine learning
+scikit-learn
+xgboost
+
+# Experiment tracking
+mlflow
+
+# Visualization & dashboard
+streamlit
+plotly
+matplotlib
+seaborn
+
+# Utilities
+pyyaml
+joblib
