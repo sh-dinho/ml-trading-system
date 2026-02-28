@@ -1,37 +1,73 @@
 import logging
+import sys
+from logging.handlers import RotatingFileHandler
 from pathlib import Path
+from typing import Optional
 
-def get_logger(name: str, log_dir: str = "logs") -> logging.Logger:
+from src.utils.paths import logs_path, ensure_dir
+
+
+def get_logger(
+    name: str,
+    level: int = logging.INFO,
+    log_file: Optional[str] = None,
+    max_bytes: int = 5_000_000,  # 5MB
+    backup_count: int = 3,
+) -> logging.Logger:
     """
-    Creates a logger that writes to both console and a file.
+    Create or retrieve a configured logger.
 
-    Args:
-        name (str): Name of the logger.
-        log_dir (str): Directory where log files will be stored.
-
-    Returns:
-        logging.Logger: Configured logger instance.
+    Features:
+    - Prevents duplicate handlers
+    - Rotating file logs
+    - Console + file output
+    - Safe for repeated calls
     """
-    # Ensure log directory exists
-    Path(log_dir).mkdir(parents=True, exist_ok=True)
 
     logger = logging.getLogger(name)
-    logger.setLevel(logging.DEBUG)
 
-    # File handler
-    file_handler = logging.FileHandler(f"{log_dir}/{name}.log")
-    file_handler.setLevel(logging.DEBUG)
-    file_formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-    file_handler.setFormatter(file_formatter)
+    # Prevent duplicate handlers
+    if logger.handlers:
+        return logger
 
-    # Console handler
-    console_handler = logging.StreamHandler()
-    console_handler.setLevel(logging.INFO)
-    console_formatter = logging.Formatter('%(name)s - %(levelname)s - %(message)s')
-    console_handler.setFormatter(console_formatter)
+    logger.setLevel(level)
+    logger.propagate = False
 
-    # Add handlers to the logger
-    logger.addHandler(file_handler)
+    # =========================
+    # Console Handler
+    # =========================
+    console_handler = logging.StreamHandler(sys.stdout)
+    console_handler.setLevel(level)
+
+    console_format = logging.Formatter(
+        "%(asctime)s | %(levelname)s | %(name)s | %(message)s",
+        datefmt="%Y-%m-%d %H:%M:%S",
+    )
+
+    console_handler.setFormatter(console_format)
     logger.addHandler(console_handler)
+
+    # =========================
+    # File Handler (Rotating)
+    # =========================
+    log_directory = ensure_dir(logs_path())
+    file_name = log_file or f"{name}.log"
+    file_path = log_directory / file_name
+
+    file_handler = RotatingFileHandler(
+        file_path,
+        maxBytes=max_bytes,
+        backupCount=backup_count,
+    )
+
+    file_handler.setLevel(logging.DEBUG)
+
+    file_format = logging.Formatter(
+        "%(asctime)s | %(levelname)s | %(name)s | "
+        "%(filename)s:%(lineno)d | %(message)s"
+    )
+
+    file_handler.setFormatter(file_format)
+    logger.addHandler(file_handler)
 
     return logger

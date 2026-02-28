@@ -1,3 +1,5 @@
+source: yfinance
+
 tickers:
   - AAPL
   - MSFT
@@ -6,12 +8,16 @@ tickers:
   - GOOGL
   - NVDA
 
-start_date: "2020-01-01"
-end_date: "2026-02-27"
+date_range:
+  start: "2014-01-01"
+  end: "today"
 
-output_dir: "data/raw"
+output:
+  directory: "data/raw"
+  format: "csv"
 
 cleaning:
   remove_duplicates: true
   dropna: false
   forward_fill: true
+  sort_index: true
