@@ -1,1 +1,5 @@
 model: RandomForest
+task: regression
+test_size: 0.2
+shuffle: true
+random_state: 42
