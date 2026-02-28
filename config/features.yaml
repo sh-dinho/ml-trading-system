@@ -1,44 +1,47 @@
-# Trend indicators
-sma:
-  - 10
-  - 20
-  - 50
-ema:
-  - 12
-  - 26
+version: 1
 
-# Momentum indicators
-rsi:
-  enabled: true
-  window: 14
-roc:
-  enabled: false
-  window: 10
+trend:
+  sma:
+    windows: [10, 20, 50]
+  ema:
+    windows: [12, 26]
 
-# Volatility indicators
-bollinger:
-  enabled: true
-  window: 20
-  num_std: 2
-atr:
-  enabled: false
-  window: 14
+momentum:
+  rsi:
+    enabled: true
+    window: 14
+  roc:
+    enabled: false
+    window: 10
 
-# Volume-based indicators
-obv:
-  enabled: false
-vroc:
-  enabled: false
-  window: 10
+volatility:
+  bollinger:
+    enabled: true
+    window: 20
+    num_std: 2
+  atr:
+    enabled: false
+    window: 14
 
-# Price‑action features
-returns:
-  enabled: true
-log_returns:
-  enabled: true
-rolling_volatility:
-  enabled: true
-  window: 20
+volume:
+  obv:
+    enabled: false
+  vroc:
+    enabled: false
+    window: 10
 
-# Output settings
-save_intermediate: false
+price_action:
+  returns:
+    enabled: true
+    period: 1
+  log_returns:
+    enabled: true
+    period: 1
+  rolling_volatility:
+    enabled: true
+    window: 20
+
+output:
+  save_intermediate: false
+  format: "parquet"
+  include_original_columns: true

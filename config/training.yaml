@@ -1,8 +1,15 @@
+version: 1
+
 target:
-  type: future_return   # options: future_return, direction, multi_class
-  horizon: 5            # predict 5‑day ahead movement
+  type: "future_return"       # options: future_return, direction, multi_class
+  horizon: 5                  # predict n-day ahead
+  column: "Adj Close"         # base column for target calculation
+  transform: "log_return"     # options: raw_return, log_return, direction
+  dropna: true                # drop rows where target cannot be computed
 
 train:
   test_size: 0.2
-  shuffle: true
-  scale_features: true
+  shuffle: false              # False for time-series to preserve temporal order
+  scale_features: true        # Apply scaling to features
+  scaling_method: "standard"  # options: standard, minmax, robust
+  random_state: 42            # reproducibility
