@@ -1,6 +1,6 @@
 from pathlib import Path
 import os
-
+import logging
 
 def _find_project_root(marker: str = "config") -> Path:
     """
@@ -65,3 +65,14 @@ def ensure_dir(path: Path) -> Path:
     """
     path.mkdir(parents=True, exist_ok=True)
     return path
+
+
+def get_logger(name: str):
+    logger = logging.getLogger(name)
+    if not logger.hasHandlers():
+        logger.setLevel(logging.INFO)
+        ch = logging.StreamHandler()
+        formatter = logging.Formatter("%(asctime)s | %(levelname)s | %(name)s | %(message)s")
+        ch.setFormatter(formatter)
+        logger.addHandler(ch)
+    return logger
