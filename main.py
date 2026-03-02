@@ -4,7 +4,7 @@ import logging
 from pathlib import Path
 from time import time
 
-from src.pipeline.train_pipeline import TrainPipeline
+from training_pipeline.train_pipeline import TrainPipeline
 from src.pipeline.backtest_pipeline import BacktestPipeline
 from src.data.preprocess import DataPreprocessor
 from src.features.builder import FeatureBuilder

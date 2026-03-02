@@ -1,4 +1,4 @@
-from src.pipeline.train_dataset import TrainingDatasetBuilder
+from training_pipeline.train_dataset import TrainingDatasetBuilder
 from pathlib import Path
 
 def test_training_dataset_builder():

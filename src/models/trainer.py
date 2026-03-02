@@ -1,113 +1,164 @@
-from dataclasses import dataclass
-from typing import Any, Dict, List, Tuple
-import yaml
-import pandas as pd
 import numpy as np
-from pathlib import Path
+import pandas as pd
+import optuna
 
-from sklearn.preprocessing import StandardScaler
 from sklearn.pipeline import Pipeline
+from sklearn.preprocessing import StandardScaler
 from sklearn.ensemble import RandomForestClassifier, RandomForestRegressor
-from sklearn.metrics import accuracy_score, f1_score, mean_squared_error, r2_score
+from sklearn.linear_model import LogisticRegression, LinearRegression
+from sklearn.metrics import f1_score, mean_squared_error
 
-
-@dataclass
-class TrainConfig:
-    model_type: str
-    task_type: str
-    test_size: float
-    random_state: int
-    window_size: int
-    step_size: int
+import lightgbm as lgb
+import xgboost as xgb
 
 
 class ModelTrainer:
-    def __init__(self, config_path="config/model.yaml"):
-        with open(config_path) as f:
-            cfg = yaml.safe_load(f)
+    def __init__(self, config):
+        self.config = config
 
-        self.config = TrainConfig(
-            model_type=cfg.get("model", "RandomForest"),
-            task_type=cfg.get("task", "classification"),
-            test_size=cfg.get("test_size", 0.2),
-            random_state=cfg.get("random_state", 42),
-            window_size=cfg.get("window_size", 1000),
-            step_size=cfg.get("step_size", 100),
-        )
-
-    # -----------------------------
-    # Model builder
-    # -----------------------------
-    def _build_model(self):
-        if self.config.model_type == "RandomForest":
+    # --------------------------------------------------------
+    # Model builders for each family
+    # --------------------------------------------------------
+    def build_model(self, family, params):
+        if family == "rf":
             if self.config.task_type == "classification":
-                base = RandomForestClassifier(
-                    n_estimators=300,
+                model = RandomForestClassifier(
+                    n_estimators=params["n_estimators"],
+                    max_depth=params["max_depth"],
+                    min_samples_split=params["min_samples_split"],
+                    min_samples_leaf=params["min_samples_leaf"],
                     random_state=self.config.random_state,
-                    n_jobs=-1,
+                    n_jobs=-1
                 )
             else:
-                base = RandomForestRegressor(
-                    n_estimators=300,
+                model = RandomForestRegressor(
+                    n_estimators=params["n_estimators"],
+                    max_depth=params["max_depth"],
+                    min_samples_split=params["min_samples_split"],
+                    min_samples_leaf=params["min_samples_leaf"],
                     random_state=self.config.random_state,
-                    n_jobs=-1,
+                    n_jobs=-1
                 )
+
+        elif family == "xgb":
+            model = xgb.XGBClassifier(
+                n_estimators=params["n_estimators"],
+                max_depth=params["max_depth"],
+                learning_rate=params["learning_rate"],
+                subsample=params["subsample"],
+                colsample_bytree=params["colsample"],
+                random_state=self.config.random_state,
+                n_jobs=-1
+            )
+
+        elif family == "lgb":
+            model = lgb.LGBMClassifier(
+                n_estimators=params["n_estimators"],
+                max_depth=params["max_depth"],
+                learning_rate=params["learning_rate"],
+                subsample=params["subsample"],
+                colsample_bytree=params["colsample"],
+                random_state=self.config.random_state,
+                n_jobs=-1
+            )
+
+        elif family == "logreg":
+            model = LogisticRegression(max_iter=500)
+
         else:
-            raise ValueError(f"Unsupported model type {self.config.model_type}")
+            raise ValueError(f"Unknown model family: {family}")
 
         return Pipeline([
             ("scaler", StandardScaler()),
-            ("model", base)
+            ("model", model)
         ])
 
-    # -----------------------------
-    # Walk-forward validation
-    # -----------------------------
-    def walk_forward(self, X: pd.DataFrame, y: pd.Series) -> Tuple[Any, Dict[str, float]]:
+    # --------------------------------------------------------
+    # Hyperparameter search space per family
+    # --------------------------------------------------------
+    def suggest_params(self, trial, family):
+        if family == "rf":
+            return {
+                "n_estimators": trial.suggest_int("n_estimators", 200, 600),
+                "max_depth": trial.suggest_int("max_depth", 3, 20),
+                "min_samples_split": trial.suggest_int("min_samples_split", 2, 20),
+                "min_samples_leaf": trial.suggest_int("min_samples_leaf", 1, 10),
+            }
+
+        if family in ("xgb", "lgb"):
+            return {
+                "n_estimators": trial.suggest_int("n_estimators", 200, 600),
+                "max_depth": trial.suggest_int("max_depth", 3, 12),
+                "learning_rate": trial.suggest_float("learning_rate", 0.01, 0.3),
+                "subsample": trial.suggest_float("subsample", 0.5, 1.0),
+                "colsample": trial.suggest_float("colsample", 0.5, 1.0),
+            }
+
+        if family == "logreg":
+            return {}
+
+    # --------------------------------------------------------
+    # Objective for Optuna
+    # --------------------------------------------------------
+    def _objective(self, trial, family, X_train, y_train, X_val, y_val):
+        params = self.suggest_params(trial, family)
+        model = self.build_model(family, params)
+
+        model.fit(X_train, y_train)
+        preds = model.predict(X_val)
+
+        if self.config.task_type == "classification":
+            return f1_score(y_val, preds, average="weighted")
+        else:
+            return -mean_squared_error(y_val, preds)
+
+    # --------------------------------------------------------
+    # Walk-forward with multi-model sweeps
+    # --------------------------------------------------------
+    def walk_forward_multi(self, X, y, n_trials=20):
         w = self.config.window_size
         step = self.config.step_size
 
-        metrics_list = []
-        models = []
+        families = ["rf", "xgb", "lgb", "logreg"]
 
-        for start in range(0, len(X) - w, step):
+        preds_all = pd.Series(index=y.index, dtype=float)
+        window_results = []
+
+        for start in range(0, len(X) - w - step, step):
             end = start + w
             test_end = end + step
 
-            X_train = X.iloc[start:end]
-            y_train = y.iloc[start:end]
+            X_train, y_train = X.iloc[start:end], y.iloc[start:end]
+            X_val, y_val = X.iloc[end:test_end], y.iloc[end:test_end]
 
-            X_test = X.iloc[end:test_end]
-            y_test = y.iloc[end:test_end]
+            best_family = None
+            best_score = -np.inf
+            best_params = None
 
-            if len(X_test) == 0:
-                break
+            # Tune each family
+            for fam in families:
+                study = optuna.create_study(direction="maximize")
+                study.optimize(
+                    lambda t: self._objective(t, fam, X_train, y_train, X_val, y_val),
+                    n_trials=n_trials
+                )
 
-            model = self._build_model()
+                if study.best_value > best_score:
+                    best_score = study.best_value
+                    best_family = fam
+                    best_params = study.best_params
+
+            # Train best model for this window
+            model = self.build_model(best_family, best_params)
             model.fit(X_train, y_train)
 
-            y_pred = model.predict(X_test)
+            preds = model.predict(X_val)
+            preds_all.iloc[end:test_end] = preds
 
-            if self.config.task_type == "classification":
-                metrics = {
-                    "accuracy": float(accuracy_score(y_test, y_pred)),
-                    "f1": float(f1_score(y_test, y_pred, average="weighted")),
-                }
-            else:
-                mse = mean_squared_error(y_test, y_pred)
-                metrics = {
-                    "mse": float(mse),
-                    "rmse": float(np.sqrt(mse)),
-                    "r2": float(r2_score(y_test, y_pred)),
-                }
+            window_results.append({
+                "family": best_family,
+                "params": best_params,
+                "score": best_score
+            })
 
-            metrics_list.append(metrics)
-            models.append(model)
-
-        # Aggregate metrics
-        final_metrics = {
-            key: float(np.mean([m[key] for m in metrics_list]))
-            for key in metrics_list[0]
-        }
-
-        return models[-1], final_metrics
+        return preds_all, window_results

@@ -9,6 +9,10 @@ ta
 # Machine learning
 scikit-learn
 xgboost
+lightgbm
+
+# Hyperparameter optimization
+optuna
 
 # Experiment tracking
 mlflow
