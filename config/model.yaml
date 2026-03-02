@@ -2,7 +2,8 @@ version: 1
 
 model:
   name: "RandomForest"
-  task: "regression"
+  type: "sklearn"              # sklearn, xgboost, lightgbm, pytorch, etc.
+  task: "regression"           # regression, classification
 
   params:
     n_estimators: 200
@@ -11,16 +12,34 @@ model:
     min_samples_leaf: 1
     max_features: "sqrt"
     n_jobs: -1
+    random_state: 42
 
 training:
   test_size: 0.2
   shuffle: true
   random_state: 42
+  stratify: false              # useful for classification tasks
+  target_column: "target"      # explicit target name
 
 cross_validation:
   enabled: false
   folds: 5
+  shuffle: true
+  random_state: 42
+
+metrics:
+  regression:
+    - rmse
+    - mae
+    - r2
+  classification:
+    - accuracy
+    - f1
+    - roc_auc
 
 output:
   save_model: true
   save_predictions: true
+  save_feature_importance: true
+  directory: "models"
+  format: "joblib"             # joblib, pickle, mlflow

@@ -1,23 +1,37 @@
-source: yfinance
+source:
+  provider: yfinance
+  interval: "1d"          # 1m, 5m, 1h, 1d, 1wk, etc.
+  auto_adjust: true       # Adjust OHLC for splits/dividends
 
 tickers:
-  - AAPL
-  - MSFT
-  - TSLA
-  - AMZN
-  - GOOGL
-  - NVDA
+  equity:
+    - AAPL
+    - MSFT
+    - TSLA
+    - AMZN
+    - GOOGL
+    - NVDA
 
 date_range:
   start: "2014-01-01"
   end: "today"
+  timezone: "US/Eastern"
 
 output:
-  directory: "data/raw"
+  raw_dir: "data/raw"
+  processed_dir: "data/processed"
+  features_dir: "data/features"
   format: "csv"
+  compression: null        # gzip, bz2, zip, or null
 
 cleaning:
   remove_duplicates: true
   dropna: false
   forward_fill: true
+  backward_fill: false
   sort_index: true
+  enforce_numeric: true
+  clip_outliers:
+    enabled: false
+    method: "zscore"       # zscore, quantile
+    threshold: 3.0

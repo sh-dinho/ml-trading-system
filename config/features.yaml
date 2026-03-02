@@ -1,12 +1,16 @@
 version: 1
 
 trend:
+  enabled: true
   sma:
+    enabled: true
     windows: [10, 20, 50]
   ema:
+    enabled: true
     windows: [12, 26]
 
 momentum:
+  enabled: true
   rsi:
     enabled: true
     window: 14
@@ -15,6 +19,7 @@ momentum:
     window: 10
 
 volatility:
+  enabled: true
   bollinger:
     enabled: true
     window: 20
@@ -24,6 +29,7 @@ volatility:
     window: 14
 
 volume:
+  enabled: false
   obv:
     enabled: false
   vroc:
@@ -31,6 +37,7 @@ volume:
     window: 10
 
 price_action:
+  enabled: true
   returns:
     enabled: true
     period: 1
@@ -45,3 +52,4 @@ output:
   save_intermediate: false
   format: "parquet"
   include_original_columns: true
+  prefix_with_group: true

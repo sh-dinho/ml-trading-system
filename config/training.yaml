@@ -1,15 +1,36 @@
 version: 1
 
 target:
-  type: "future_return"       # options: future_return, direction, multi_class
-  horizon: 5                  # predict n-day ahead
-  column: "Adj Close"         # base column for target calculation
-  transform: "log_return"     # options: raw_return, log_return, direction
-  dropna: true                # drop rows where target cannot be computed
+  type: "future_return"          # future_return, direction, multi_class, custom
+  horizon: 5                     # n-step ahead prediction
+  base_column: "Adj Close"       # column used to derive the target
+
+  transform:
+    method: "log_return"         # raw_return, log_return, direction
+    clip_extremes: false         # optional outlier clipping
+    clip_threshold: 0.05         # 5% daily move cap (if enabled)
+
+  direction_labels:
+    up: 1
+    down: 0
+    neutral: null                # used only for 3-class setups
+
+  dropna: true                   # remove rows where target cannot be computed
+  align_with_features: true      # ensures target is shifted correctly
 
 train:
   test_size: 0.2
-  shuffle: false              # False for time-series to preserve temporal order
-  scale_features: true        # Apply scaling to features
-  scaling_method: "standard"  # options: standard, minmax, robust
-  random_state: 42            # reproducibility
+  shuffle: false                 # must remain false for time-series
+  scale_features: true
+  scaling_method: "standard"     # standard, minmax, robust
+  random_state: 42
+
+  feature_selection:
+    enabled: false
+    method: "variance"           # variance, mutual_info, model_based
+    threshold: 0.0
+
+  time_series_split:
+    enabled: false
+    n_splits: 5
+    gap: 0                       # gap between train/validation windows
