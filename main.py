@@ -1,50 +1,49 @@
 import os
 import sys
-import logging
-from pathlib import Path
-from time import time
-
-from training_pipeline.train_pipeline import TrainPipeline
-from src.pipeline.backtest_pipeline import BacktestPipeline
+from src.data.fetcher import DataFetcher
 from src.data.preprocess import DataPreprocessor
-from src.features.builder import FeatureBuilder
-from src.models.registry import ModelRegistry
+from src.features.engineer import FeatureEngineer
+from src.data.dataset import DatasetBuilder
+from src.pipelines.end_to_end import EndToEndPipeline
+from src.utils.logger import get_logger
 
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
+logger = get_logger("v1.1_automation")
 
-def main():
-    # Step 1: Data Preprocessing (Raw data → Processed data)
-    logger.info("Starting data preprocessing...")
-    start_time = time()
-    preprocessor = DataPreprocessor(config_file="config/data.yaml")
-    preprocessor.process_all()  # Process all CSVs in raw directory
-    logger.info(f"Data preprocessing completed in {time() - start_time:.2f} seconds.")
-
-    # Step 2: Feature Engineering (Raw data → Features)
-    logger.info("Starting feature engineering...")
-    start_time = time()
-    feature_builder = FeatureBuilder(config_path="config/features.yaml")
-    feature_builder.process_all()  # Process all processed files to extract features
-    logger.info(f"Feature engineering completed in {time() - start_time:.2f} seconds.")
-
-    # Step 3: Model Training (Features → Models)
-    logger.info("Starting model training...")
-    start_time = time()
-    train_pipeline = TrainPipeline(dataset_dir="data/datasets", model_dir="models")
-    train_pipeline.run_all()  # Train model for all tickers
-    logger.info(f"Model training completed in {time() - start_time:.2f} seconds.")
-
-    # Step 4: Model Backtesting (Models → Backtest Results)
-    logger.info("Starting model backtesting...")
-    start_time = time()
-    backtest_pipeline = BacktestPipeline(dataset_dir="data/datasets", model_dir="models", backtest_dir="data/backtests")
-    backtest_pipeline.run_all()  # Backtest models for all tickers
-    logger.info(f"Backtesting completed in {time() - start_time:.2f} seconds.")
+def run_automated_pipeline():
+    logger.info("=== Starting Quant Pipeline v1.1 ===")
+    
+    try:
+        # 1. Ingestion
+        logger.info("[1/5] Fetching latest market data...")
+        fetcher = DataFetcher(config_file="config/data.yaml")
+        # Assuming DataFetcher has a method to process all tickers defined in config
+        fetcher.fetch_all() 
+        
+        # 2. Preprocessing
+        logger.info("[2/5] Cleaning and standardizing data...")
+        preprocessor = DataPreprocessor()
+        preprocessor.process_all()
+        
+        # 3. Feature Engineering
+        logger.info("[3/5] Computing technical indicators and alpha features...")
+        engineer = FeatureEngineer()
+        engineer.process_all()
+        
+        # 4. Dataset Building
+        logger.info("[4/5] Aligning targets and cleaning NaNs...")
+        builder = DatasetBuilder()
+        builder.build_all()
+        
+        # 5. End-to-End Training & Backtesting
+        logger.info("[5/5] Executing Walk-Forward Optimization & Backtesting...")
+        pipeline = EndToEndPipeline(global_model=True)
+        pipeline.run_portfolio()
+        
+        logger.info("=== Pipeline Completed Successfully ===")
+        
+    except Exception as e:
+        logger.error(f"Pipeline failed: {e}")
+        sys.exit(1)
 
 if __name__ == "__main__":
-    try:
-        main()
-    except Exception as e:
-        logger.error(f"Error occurred: {e}")
-        sys.exit(1)
+    run_automated_pipeline()
