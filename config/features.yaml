@@ -1,55 +1,79 @@
-version: 1
+# ============================
+# Feature Engineering Settings
+# ============================
 
 trend:
   enabled: true
+
   sma:
     enabled: true
-    windows: [10, 20, 50]
+    windows: [10, 20, 50, 100, 200]
+
   ema:
     enabled: true
-    windows: [12, 26]
+    windows: [12, 26, 50]
+
+  macd:
+    enabled: true
+    fast: 12
+    slow: 26
+    signal: 9
+
 
 momentum:
   enabled: true
+
   rsi:
     enabled: true
     window: 14
+
   roc:
-    enabled: false
+    enabled: true
     window: 10
+
+  stochastic:
+    enabled: true
+    k_window: 14
+    d_window: 3
+
 
 volatility:
   enabled: true
+
   bollinger:
     enabled: true
     window: 20
     num_std: 2
-  atr:
-    enabled: false
-    window: 14
 
-volume:
-  enabled: false
-  obv:
-    enabled: false
-  vroc:
-    enabled: false
-    window: 10
-
-price_action:
-  enabled: true
-  returns:
-    enabled: true
-    period: 1
-  log_returns:
-    enabled: true
-    period: 1
   rolling_volatility:
     enabled: true
     window: 20
 
-output:
-  save_intermediate: false
-  format: "parquet"
-  include_original_columns: true
-  prefix_with_group: true
+  atr:
+    enabled: true
+    window: 14
+
+
+price_action:
+  enabled: true
+
+  returns:
+    enabled: true
+
+  log_returns:
+    enabled: true
+
+
+volume:
+  enabled: true
+
+  obv:
+    enabled: true
+
+  vroc:
+    enabled: true
+    window: 10
+
+  cmf:
+    enabled: true
+    window: 20

@@ -11,45 +11,34 @@ def get_logger(
     name: str,
     level: int = logging.INFO,
     log_file: Optional[str] = None,
-    max_bytes: int = 5_000_000,  # 5MB
+    max_bytes: int = 5_000_000,
     backup_count: int = 3,
 ) -> logging.Logger:
-    """
-    Create or retrieve a configured logger.
-
-    Features:
-    - Prevents duplicate handlers
-    - Rotating file logs
-    - Console + file output
-    - Safe for repeated calls
-    """
 
     logger = logging.getLogger(name)
 
-    # Prevent duplicate handlers
     if logger.handlers:
         return logger
 
     logger.setLevel(level)
     logger.propagate = False
 
-    # =========================
-    # Console Handler
-    # =========================
+    # Force UTF‑8 console output (Windows-safe)
+    try:
+        sys.stdout.reconfigure(encoding="utf-8")
+    except Exception:
+        pass
+
+    # Console handler
     console_handler = logging.StreamHandler(sys.stdout)
     console_handler.setLevel(level)
-
-    console_format = logging.Formatter(
+    console_handler.setFormatter(logging.Formatter(
         "%(asctime)s | %(levelname)s | %(name)s | %(message)s",
         datefmt="%Y-%m-%d %H:%M:%S",
-    )
-
-    console_handler.setFormatter(console_format)
+    ))
     logger.addHandler(console_handler)
 
-    # =========================
-    # File Handler (Rotating)
-    # =========================
+    # File handler
     log_directory = ensure_dir(logs_path())
     file_name = log_file or f"{name}.log"
     file_path = log_directory / file_name
@@ -58,16 +47,12 @@ def get_logger(
         file_path,
         maxBytes=max_bytes,
         backupCount=backup_count,
+        encoding="utf-8"
     )
-
     file_handler.setLevel(logging.DEBUG)
-
-    file_format = logging.Formatter(
-        "%(asctime)s | %(levelname)s | %(name)s | "
-        "%(filename)s:%(lineno)d | %(message)s"
-    )
-
-    file_handler.setFormatter(file_format)
+    file_handler.setFormatter(logging.Formatter(
+        "%(asctime)s | %(levelname)s | %(name)s | %(filename)s:%(lineno)d | %(message)s"
+    ))
     logger.addHandler(file_handler)
 
     return logger

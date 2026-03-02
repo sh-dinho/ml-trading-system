@@ -1,0 +1,45 @@
+# ============================
+# Target Configuration
+# ============================
+
+# Choose one of:
+#   future_return
+#   future_log_return
+#   direction
+#   direction_3class
+#   future_volatility
+#   volatility_bucket
+#   macd_cross
+#   bollinger_breakout
+#   rsi_signal
+
+type: future_return
+
+# How many steps ahead to predict
+horizon: 5
+
+# Classification thresholds (used only when relevant)
+thresholds:
+  up: 0.002        # +0.2%
+  down: -0.002     # -0.2%
+
+# Volatility bucket thresholds (annualized or raw)
+volatility_buckets:
+  low: 0.01
+  medium: 0.02
+
+# RSI signal levels
+rsi_levels:
+  overbought: 70
+  oversold: 30
+
+# MACD crossovers
+macd:
+  fast: 12
+  slow: 26
+  signal: 9
+
+# Bollinger breakout settings
+bollinger:
+  window: 20
+  num_std: 2
