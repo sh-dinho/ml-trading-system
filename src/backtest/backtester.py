@@ -7,7 +7,6 @@ import pandas as pd
 
 from src.models.trading_metrics import TradingMetrics
 
-
 @dataclass
 class BacktestConfig:
     initial_capital: float = 1_000_000.0

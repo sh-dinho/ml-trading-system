@@ -1,45 +1,16 @@
-version: 1
-
+# config/model.yaml (v1.1)
 model:
-  name: "RandomForest"
-  type: "sklearn"              # sklearn, xgboost, lightgbm, pytorch, etc.
-  task: "regression"           # regression, classification
-
-  params:
-    n_estimators: 200
-    max_depth: null
-    min_samples_split: 2
-    min_samples_leaf: 1
-    max_features: "sqrt"
-    n_jobs: -1
-    random_state: 42
+  name: "XGBoost"
+  task: "regression"
 
 training:
   test_size: 0.2
-  shuffle: true
-  random_state: 42
-  stratify: false              # useful for classification tasks
-  target_column: "target"      # explicit target name
+  shuffle: false          # CRITICAL: Never shuffle time-series
+  target_column: "target"
 
 cross_validation:
-  enabled: false
-  folds: 5
-  shuffle: true
-  random_state: 42
-
-metrics:
-  regression:
-    - rmse
-    - mae
-    - r2
-  classification:
-    - accuracy
-    - f1
-    - roc_auc
-
-output:
-  save_model: true
-  save_predictions: true
-  save_feature_importance: true
-  directory: "models"
-  format: "joblib"             # joblib, pickle, mlflow
+  enabled: true
+  type: "walk_forward"
+  window_size: 1000       # Training window (days)
+  step_size: 60           # Retrain every 3 months (approx)
+  gap: 5                  # Should match your prediction horizon

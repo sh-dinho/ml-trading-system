@@ -1,7 +1,7 @@
 import pandas as pd
 from pathlib import Path
 
-from src.datasets.dataset import DatasetBuilder
+from src.data.dataset import DatasetBuilder
 from src.utils.logger import get_logger
 
 logger = get_logger("test_dataset")
